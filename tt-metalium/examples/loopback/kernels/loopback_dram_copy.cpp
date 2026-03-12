@@ -1,10 +1,15 @@
+constexpr uint32_t TILE_WIDTH  = 32;
+constexpr uint32_t TILE_HEIGHT = 32;
+constexpr uint32_t BYTES_PER_ELEMENT = 2;
+
 void kernel_main() {
+
     std::uint32_t l1_buffer_addr       = get_arg_val<uint32_t>(0);
     std::uint32_t dram_buffer_src_addr = get_arg_val<uint32_t>(1);
     std::uint32_t dram_buffer_dst_addr = get_arg_val<uint32_t>(2);
     std::uint32_t num_tiles            = get_arg_val<uint32_t>(3);
 
-    const uint32_t tile_size_bytes = 32 * 32 * 2;
+    const uint32_t tile_size_bytes = TILE_WIDTH * TILE_HEIGHT * BYTES_PER_ELEMENT;
 
     constexpr auto in0_args = TensorAccessorArgs<0>();
     const auto in0 = TensorAccessor(in0_args, dram_buffer_src_addr, tile_size_bytes);
