@@ -38,5 +38,28 @@ int main() {
     fmt::print("Created an L1 buffer of size: {} bytes\n", l1_buffer->size());
     fmt::print("-------------------------------------------------------\n");
 
+    // Create two DRAM buffers
+    distributed::DeviceLocalBufferConfig dram_config{
+        .page_size = tile_size_bytes,
+        .buffer_type = tt::tt_metal::BufferType::DRAM
+    };
+
+    distributed::ReplicatedBufferConfig dram_buffer_config{
+        .size = dram_buffer_size
+    };
+
+    auto input_dram_buffer = distributed::MeshBuffer::create(dram_buffer_config, dram_config, mesh_device.get());
+    auto output_dram_buffer = distributed::MeshBuffer::create(dram_buffer_config, dram_config, mesh_device.get());
+
+    fmt::print("\n");
+    fmt::print("-------------------------------------------------------\n");
+    fmt::print("Created an input DRAM buffer of size: {} bytes\n", input_dram_buffer->size());
+    fmt::print("-------------------------------------------------------\n");
+
+    fmt::print("\n");
+    fmt::print("-------------------------------------------------------\n");
+    fmt::print("Created an output DRAM buffer of size: {} bytes\n", output_dram_buffer->size());
+    fmt::print("-------------------------------------------------------\n");
+
 	return 0;
 }
