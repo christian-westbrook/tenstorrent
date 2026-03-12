@@ -1,2 +1,7 @@
-# tenstorrent
-Working my way through the stack from ML frameworks to execution on Tenstorrent Accelerators
+# Tenstorrent
+
+Kernel development and accelerator engineering targeting Tenstorrent hardware.
+
+| Directory | Contents |
+|-----------|----------|
+| tt-metalium | Tenstorrent accelerator kernels written in TT-Metalium |
