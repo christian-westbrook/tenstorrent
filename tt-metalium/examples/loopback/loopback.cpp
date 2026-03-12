@@ -61,5 +61,74 @@ int main() {
     fmt::print("Created an output DRAM buffer of size: {} bytes\n", output_dram_buffer->size());
     fmt::print("-------------------------------------------------------\n");
 
+    // Generate a random vector of bfloat16s to serve as an input tensor
+    std::vector<bfloat16> input_vec(elements_per_tile * num_tiles);
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_real_distribution<float> distribution(0.0f, 100.0f);
+
+    for (auto& val : input_vec) {
+        val = bfloat16(distribution(rng));
+    }
+
+    // Transfer the input tensor from host DRAM to device DRAM
+    distributed::EnqueueWriteMeshBuffer(cq, input_dram_buffer, input_vec, false);
+
+    // Create the data movement kernel
+    constexpr CoreCoord core = {0, 0};
+    std::vector<uint32_t> dram_copy_compile_time_args;
+    TensorAccessorArgs(*input_dram_buffer->get_backing_buffer()).append_to(dram_copy_compile_time_args);
+    TensorAccessorArgs(*output_dram_buffer->get_backing_buffer()).append_to(dram_copy_compile_time_args);
+
+    KernelHandle dram_copy_kernel_id = CreateKernel(
+        program,
+        "loopback/kernels/loopback_dram_copy.cpp",
+        core,
+        DataMovementConfig{
+            .processor = DataMovementProcessor::RISCV_0,
+            .noc = NOC::RISCV_0_default,
+            .compile_args = dram_copy_compile_time_args
+        }
+    );
+
+    const std::vector<uint32_t> runtime_args = {
+        l1_buffer->address(),
+        input_dram_buffer->address(),
+        output_dram_buffer->address(),
+        num_tiles
+    };
+
+    SetRuntimeArgs(program, dram_copy_kernel_id, core, runtime_args);
+
+    // Run the kernel
+    distributed::MeshWorkload workload;
+    distributed::MeshCoordinateRange device_range = distributed::MeshCoordinateRange(mesh_device->shape());
+    workload.add_program(device_range, std::move(program));
+
+    distributed::EnqueueMeshWorkload(cq, workload, false);
+    distributed::Finish(cq);
+
+    std::vector<bfloat16> result_vec;
+    distributed::EnqueueReadMeshBuffer(cq, result_vec, output_dram_buffer, true);
+
+    bool pass = true;
+
+    for (int i = 0; i < input_vec.size(); i++) {
+        if (input_vec[i] != result_vec[i]) {
+            pass = false;
+            break;
+        }
+    }
+
+    pass &= mesh_device->close();
+
+    fmt::print("\n");
+    fmt::print("-------------------------------------------------------\n");
+    if (pass) {
+        fmt::print("Test Passed\n");
+    } else {
+        TT_THROW("Test Failed\n");
+    }
+    fmt::print("-------------------------------------------------------\n");
+
 	return 0;
 }
