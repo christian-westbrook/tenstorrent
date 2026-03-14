@@ -10,15 +10,15 @@ void kernel_main() {
     std::uint32_t dram_buffer_dst_addr = get_arg_val<uint32_t>(2);
     std::uint32_t num_tiles            = get_arg_val<uint32_t>(3);
 
+    // Calculate bytes for a single tile
+    const uint32_t tile_size_bytes = TILE_WIDTH * TILE_HEIGHT * BYTES_PER_ELEMENT;
+
     // Retrieve compile time arguments
     constexpr auto in0_args = TensorAccessorArgs<0>();
     const auto in0 = TensorAccessor(in0_args, dram_buffer_src_addr, tile_size_bytes);
 
     constexpr auto out0_args = TensorAccessorArgs<in0_args.next_compile_time_args_offset()>();
     const auto out0 = TensorAccessor(out0_args, dram_buffer_dst_addr, tile_size_bytes);
-
-    // Calculate bytes for a single tile
-    const uint32_t tile_size_bytes = TILE_WIDTH * TILE_HEIGHT * BYTES_PER_ELEMENT;
 
     // Transfer data
     for(uint32_t i=0; i < num_tiles; i++) {
