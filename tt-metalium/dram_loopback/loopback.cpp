@@ -81,7 +81,7 @@ int main() {
 
     KernelHandle dram_copy_kernel_id = CreateKernel(
         program,
-        "loopback/kernels/loopback_dram_copy.cpp",
+        "dram_loopback/kernels/loopback_dram_copy.cpp",
         core,
         DataMovementConfig{
             .processor = DataMovementProcessor::RISCV_0,
